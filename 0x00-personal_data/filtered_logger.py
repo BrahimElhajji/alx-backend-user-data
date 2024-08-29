@@ -6,7 +6,7 @@ Module for filtering log messages.
 import re
 from typing import List
 import logging
-from os import getenv
+import os
 import mysql.connector
 from mysql.connector import connection
 
@@ -90,7 +90,7 @@ def get_logger() -> logging.Logger:
     return logger
 
 
-def get_db() -> mysql.connector.connection.MySQLConnection:
+def get_db() -> connection.MySQLConnection:
     """
     Creates a connection to the MySQL database using
     credentials from environment variables.
@@ -99,10 +99,41 @@ def get_db() -> mysql.connector.connection.MySQLConnection:
         mysql.connector.connection.MySQLConnection:
         A MySQL database connection object.
     """
+    # Retrieve credentials from environment variables with defaults
+    user = os.getenv('PERSONAL_DATA_DB_USERNAME', 'root')
+    password = os.getenv('PERSONAL_DATA_DB_PASSWORD', '')
+    host = os.getenv('PERSONAL_DATA_DB_HOST', 'localhost')
+    database = os.getenv('PERSONAL_DATA_DB_NAME')
+
+    # Create a connection to the MySQL database
     connection = mysql.connector.connect(
-        user=getenv('PERSONAL_DATA_DB_USERNAME', 'root'),
-        password=getenv('PERSONAL_DATA_DB_PASSWORD', ''),
-        host=getenv('PERSONAL_DATA_DB_HOST', 'localhost'),
-        database=getenv('PERSONAL_DATA_DB_NAME')
+        user=user,
+        password=password,
+        host=host,
+        database=database
     )
+
     return connection
+
+
+def main() -> None:
+    """ generate mysql connector to the database """
+    drop = get_db()
+    cursor = drop.cursor()
+    query = "SELECT * FROM users"
+    cursor.execute(query)
+    formatter = get_logger()
+    for (
+        name,
+        email,
+        ssn,
+        phone,
+        password,
+        ip,
+        last_login,
+            user_agent) in cursor:
+        message = f"name={name}; email={email}; phone={phone}; ssn={ssn}; password={password}; ip={ip}; last_login={last_login}; user_agent={user_agent};"
+        formatter.info(message)
+
+    cursor.close()
+    drop.close()
