@@ -6,7 +6,7 @@ Module for filtering log messages.
 import re
 from typing import List
 import logging
-import os
+from os import getenv
 import mysql.connector
 from mysql.connector import connection
 
@@ -90,23 +90,18 @@ def get_logger() -> logging.Logger:
     return logger
 
 
-def get_db() -> connection.MySQLConnection:
+def get_db() -> mysql.connector.connection.MySQLConnection:
     """
-    Creates a connection to the MySQL database
-    using credentials from environment variables.
+    Creates a connection to the MySQL database using
+    credentials from environment variables.
 
     Returns:
         mysql.connector.connection.MySQLConnection:
         A MySQL database connection object.
     """
-    username = os.getenv("PERSONAL_DATA_DB_USERNAME", "root")
-    password = os.getenv("PERSONAL_DATA_DB_PASSWORD", "")
-    host = os.getenv("PERSONAL_DATA_DB_HOST", "localhost")
-    db_name = os.getenv("PERSONAL_DATA_DB_NAME")
-
-    return mysql.connector.connect(
-        user=username,
-        password=password,
-        host=host,
-        database=db_name
-    )
+    mysql.connector.connect(
+        user=getenv('PERSONAL_DATA_DB_USERNAME'),
+        password=getenv('PERSONAL_DATA_DB_PASSWORD'),
+        host=getenv('PERSONAL_DATA_DB_HOST'),
+        database=getenv('PERSONAL_DATA_DB_NAME'))
+    return mysql.connector.connect
