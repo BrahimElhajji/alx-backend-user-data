@@ -92,31 +92,47 @@ def get_logger() -> logging.Logger:
 
 def get_db() -> mysql.connector.connection.MySQLConnection:
     """ returns a connector to the database """
-    cnnection = mysql.connector.connect(
-        user=getenv('PERSONAL_DATA_DB_USERNAME'),
-        password=getenv('PERSONAL_DATA_DB_PASSWORD'),
-        host=getenv('PERSONAL_DATA_DB_HOST'),
-        database=getenv('PERSONAL_DATA_DB_NAME'))
-    return cnnection
+    db_host = os.getenv("PERSONAL_DATA_DB_HOST", "localhost")
+    db_name = os.getenv("PERSONAL_DATA_DB_NAME", "")
+    db_user = os.getenv("PERSONAL_DATA_DB_USERNAME", "root")
+    db_pwd = os.getenv("PERSONAL_DATA_DB_PASSWORD", "")
+    connection = mysql.connector.connect(
+        host=db_host,
+        port=3306,
+        user=db_user,
+        password=db_pwd,
+        database=db_name,
+    )
+    return connection
+
 
 def main() -> None:
-    """ generate mysql connector to the database """
-    drop = get_db()
-    cursor = drop.cursor()
-    query = "SELECT * FROM users"
-    cursor.execute(query)
-    formatter = get_logger()
-    for (
-        name,
-        email,
-        ssn,
-        phone,
-        password,
-        ip,
-        last_login,
-            user_agent) in cursor:
-        message = f"name={name}; email={email}; phone={phone}; ssn={ssn}; password={password}; ip={ip}; last_login={last_login}; user_agent={user_agent};"
-        formatter.info(message)
+    """Obtains a database connection using get_db and retrieve all rows in
+    the users table and display each row under a filtered format.
 
-    cursor.close()
-    drop.close()
+    Filtered fields:
+    1. name
+    2. email
+    3. phone
+    4. ssn
+    5. password
+
+    Only your main function should run when the module is executed.
+    """
+    logger = get_logger()
+    logger.setLevel(logging.INFO)
+
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute("SELECT * FROM users")
+    rows = cursor.fetchall()
+
+    for row in rows:
+        message = "; ".join([f"{field}={row[field]}" for field in row.keys()])
+        logger.info(filter_datum(PII_FIELDS, RedactingFormatter.REDACTION,
+                                 message, RedactingFormatter.SEPARATOR))
+
+
+if __name__ == "__main__":
+    main()
