@@ -23,8 +23,8 @@ class BasicAuth(Auth):
         Returns:
             str: The Base64 part of the header, or None if invalid.
         """
-        if authorization_header is None
-        or not isinstance(authorization_header, str):
+        if authorization_header is None or not isinstance(
+                authorization_header, str):
             return None
         if not authorization_header.startswith("Basic "):
             return None
@@ -41,8 +41,8 @@ class BasicAuth(Auth):
         Returns:
             str: The decoded string, or None if invalid.
         """
-        if base64_authorization_header is None
-        or not isinstance(base64_authorization_header, str):
+        if base64_authorization_header is None or not isinstance(
+                base64_authorization_header, str):
             return None
         try:
             decoded_bytes = base64.b64decode(base64_authorization_header)
