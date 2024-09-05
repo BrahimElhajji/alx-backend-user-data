@@ -5,16 +5,16 @@ import uuid
 
 class SessionAuth(Auth):
     """Session Authentication class that inherits from Auth."""
-    
+
     user_id_by_session_id = {}
 
     def create_session(self, user_id: str = None) -> str:
         """
         Creates a Session ID for a given user_id.
-        
+
         Args:
             user_id (str): The user ID for which to create a session.
-        
+
         Returns:
             str: The generated Session ID, or None if input is invalid.
         """
