@@ -1,20 +1,22 @@
 #!/usr/bin/env python3
-""" Module of the API """
-from flask import Flask, jsonify, request, abort
+"""API application module"""
+from flask import Flask, jsonify, request
 from api.v1.views import app_views
+from models import storage
 from os import getenv
-from flask_cors import CORS, cross_origin
+from flask_cors import CORS
 from api.v1.auth.auth import Auth
 from api.v1.auth.basic_auth import BasicAuth
-from models import storage
 
 
 app = Flask(__name__)
 CORS(app, resources={r"/api/v1/*": {"origins": "*"}})
 app.register_blueprint(app_views)
 
+
 auth = None
-auth_type = getenv('AUTH_TYPE')
+auth_type = getenv("AUTH_TYPE")
+
 
 if auth_type == "basic_auth":
     auth = BasicAuth()
