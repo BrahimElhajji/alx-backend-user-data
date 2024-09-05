@@ -1,53 +1,75 @@
 #!/usr/bin/env python3
-"""API application module"""
-from flask import Flask, jsonify, request
-from api.v1.views import app_views
-from models import storage
+"""
+Route module for the API
+"""
 from os import getenv
-from flask_cors import CORS
 from api.v1.auth.auth import Auth
-from api.v1.auth.basic_auth import BasicAuth
+from api.v1.views import app_views
+from flask import Flask, jsonify, abort, request
+from flask_cors import CORS
 
 
 app = Flask(__name__)
-CORS(app, resources={r"/api/v1/*": {"origins": "*"}})
 app.register_blueprint(app_views)
-
-
+CORS(app, resources={r"/api/v1/*": {"origins": "*"}})
 auth = None
 auth_type = getenv("AUTH_TYPE")
 
-
 if auth_type == "basic_auth":
+    from api.v1.auth.basic_auth import BasicAuth
     auth = BasicAuth()
 elif auth_type == "session_auth":
     from api.v1.auth.session_auth import SessionAuth
     auth = SessionAuth()
+else:
+    auth = Auth()
 
 
 @app.before_request
-def before_request():
-    """Before each request handler"""
-    if auth is None:
-        return
-    request.current_user = auth.current_user(request)
-    if not auth.require_auth(request.path, ['/api/v1/status/',
-                                            '/api/v1/unauthorized/',
-                                            '/api/v1/forbidden/']):
-        return
-    if auth.authorization_header(request) is None:
-        return jsonify({"error": "Unauthorized"}), 401
-    if request.current_user is None:
-        return jsonify({"error": "Forbidden"}), 403
+def filter_auth_require() -> None:
+    """
+    filters requests that need authorization
+    """
+    require_auth = auth.require_auth(request.path,
+                                     ['/api/v1/status/',
+                                      '/api/v1/unauthorized/',
+                                      '/api/v1/forbidden/',
+                                      '/api/v1/auth_session/login/'])
+    if not require_auth:
+        return None
+    if not auth.authorization_header(
+            request) and not auth.session_cookie(request):
+        abort(401)
+    usr = auth.current_user(request)
+    if not usr:
+        abort(403)
+    request.current_user = usr
 
 
-@app.teardown_appcontext
-def teardown_db(exception):
-    """Close storage on app context teardown"""
-    storage.close()
+@app.errorhandler(404)
+def not_found(error) -> str:
+    """ Not found handler
+    """
+    return jsonify({"error": "Not found"}), 404
+
+
+@app.errorhandler(401)
+def unauthorized(error) -> str:
+    """
+        Not authorized error
+    """
+    return jsonify({"error": "Unauthorized"}), 401
+
+
+@app.errorhandler(403)
+def forbidden(error) -> str:
+    """
+        forbidden error
+    """
+    return jsonify({"error": "Forbidden"}), 403
 
 
 if __name__ == "__main__":
     host = getenv("API_HOST", "0.0.0.0")
     port = getenv("API_PORT", "5000")
-    app.run(host=host, port=int(port))
+    app.run(host=host, port=port)
