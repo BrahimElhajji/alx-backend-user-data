@@ -10,33 +10,43 @@ class SessionAuth(Auth):
 
     user_id_by_session_id = {}
 
-    def create_session(self, user_id: str = None) -> str:
-        """Creates a Session ID for a user_id."""
-        if user_id is None or not isinstance(user_id, str):
+     def create_session(self, user_id: str = None) -> str:
+        """
+        creates a session Id for a user
+        """
+        if not user_id or not isinstance(user_id, str):
             return None
-        session_id = str(uuid.uuid4())
-        self.user_id_by_session_id[session_id] = user_id
-        return session_id
+        usr_id = str(uuid4())
+        SessionAuth.user_id_by_session_id[usr_id] = user_id
+        return usr_id
 
     def user_id_for_session_id(self, session_id: str = None) -> str:
-        """Returns the User ID based on a Session ID."""
-        if session_id is None or not isinstance(session_id, str):
+        """
+        returns user_id based on session_id
+        """
+        if not session_id or not isinstance(session_id, str):
             return None
-        return self.user_id_by_session_id.get(session_id)
-
-    def session_cookie(self, request=None) -> str:
-        """Returns a cookie value from a request."""
-        if request is None:
-            return None
-        session_name = getenv('SESSION_NAME')
-        return request.cookies.get(session_name)
+        return SessionAuth.user_id_by_session_id.get(session_id)
 
     def current_user(self, request=None):
-        """Returns a User instance based on a cookie value."""
-        if request is None:
-            return None
-        session_id = self.session_cookie(request)
-        user_id = self.user_id_for_session_id(session_id)
-        if user_id:
-            return User.get(user_id)
-        return None
+        """
+        returns user based on cookie value
+        """
+        sesh_cookie = self.session_cookie(request)
+        usr_id = self.user_id_for_session_id(sesh_cookie)
+        return User.get(usr_id)
+
+    def destroy_session(self, request=None):
+        """
+        logout user
+        """
+        if not request:
+            return False
+        sesh_cookie = self.session_cookie(request)
+        if not sesh_cookie:
+            return False
+        usr_id = self.user_id_for_session_id(sesh_cookie)
+        if not usr_id:
+            return False
+        SessionAuth.user_id_by_session_id.pop(sesh_cookie)
+        return True
