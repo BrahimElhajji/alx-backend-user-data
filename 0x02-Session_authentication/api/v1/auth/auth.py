@@ -7,24 +7,6 @@ from typing import List, TypeVar
 class Auth:
     """Auth class to manage API authentication."""
 
-    def session_cookie(self, request=None):
-        """
-        Returns the value of a session cookie from the request.
-
-        Args:
-            request (flask.Request): The Flask request object.
-
-        Returns:
-            str: The value of the session cookie,
-            or None if the cookie is not found or request is None.
-        """
-        if request is None:
-            return None
-
-        cookie_name = os.getenv('SESSION_NAME', '_my_session_id')
-
-        return request.cookies.get(cookie_name)
-
     def require_auth(self, path: str, excluded_paths: List[str]) -> bool:
         """
         Determines if authentication is required for a given path.
@@ -56,3 +38,21 @@ class Auth:
         Retrieves the current user from the request.
         """
         return None
+
+    def session_cookie(self, request=None):
+        """
+        Returns the value of a session cookie from the request.
+
+        Args:
+            request (flask.Request): The Flask request object.
+
+        Returns:
+            str: The value of the session cookie,
+            or None if the cookie is not found or request is None.
+        """
+        if request is None:
+            return None
+
+        cookie_name = os.getenv('SESSION_NAME', '_my_session_id')
+
+        return request.cookies.get(cookie_name)
