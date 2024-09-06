@@ -3,8 +3,7 @@
 from flask import Flask, jsonify, request, abort
 from api.v1.views import app_views
 from os import getenv
-from flask_cors import CORS, cross_origin
-from api.v1.auth.auth import Auth
+from flask_cors import CORS
 from api.v1.auth.basic_auth import BasicAuth
 from api.v1.auth.session_auth import SessionAuth
 
@@ -13,7 +12,7 @@ app = Flask(__name__)
 CORS(app, resources={r"/api/v1/*": {"origins": "*"}})
 app.register_blueprint(app_views)
 
-
+# Initialize auth based on AUTH_TYPE environment variable
 auth = None
 auth_type = getenv('AUTH_TYPE')
 
@@ -24,19 +23,16 @@ elif auth_type == "session_auth":
 
 
 @app.before_request
-def before_request():
-    """ Before request handler to run before each request """
-    if auth is None:
-        return
-    excluded_paths = ['/api/v1/status/', '/api/v1/unauthorized/',
-                      '/api/v1/forbidden/']
-    if not auth.require_auth(request.path, excluded_paths):
-        return
-    if auth.authorization_header(request) is None:
-        abort(401)
-    request.current_user = auth.current_user(request)
-    if request.current_user is None:
-        abort(403)
+def require_auth():
+    """
+    Method to enforce authentication.
+    """
+    excluded_paths = ['/api/v1/status', '/api/v1/auth_session/login/']
+
+    if request.path not in excluded_paths:
+        if not (auth.authorization_header(request)
+                or auth.session_cookie(request)):
+            abort(401)
 
 
 @app.errorhandler(404)
@@ -58,6 +54,5 @@ def forbidden(error) -> str:
 
 
 if __name__ == "__main__":
-    host = getenv("API_HOST", "0.0.0.0")
-    port = getenv("API_PORT", "5000")
-    app.run(host=host, port=port)
+    app.run(host=getenv('API_HOST', '0.0.0.0'),
+            port=int(getenv('API_PORT', 5000)))
