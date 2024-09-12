@@ -6,13 +6,13 @@ from db import DB
 from user import User
 import bcrypt
 from sqlalchemy.orm.exc import NoResultFound
-import uuid
+from uuid import uuid4
 
 
 def _generate_uuid() -> str:
     """Generate a new UUID and return its
     string representation."""
-    return str(uuid.uuid4())
+    return str(uuid4())
 
 
 def _hash_password(password: str) -> bytes:
@@ -67,3 +67,13 @@ class Auth:
                     password.encode('utf-8'), user.hashed_password)
         except NoResultFound:
             return False
+
+    def get_user_from_session_id(self, session_id: str) -> User:
+        """Return the user corresponding to the given session ID, or None."""
+        if session_id is None:
+            return None
+        try:
+            user = self._db.find_user_by(session_id=session_id)
+            return user
+        except (NoResultFound, InvalidRequestError):
+            return None
