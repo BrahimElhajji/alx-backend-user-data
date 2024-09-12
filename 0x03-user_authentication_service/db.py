@@ -50,3 +50,24 @@ class DB:
         except SQLAlchemyError as e:
             self._session.rollback()
             raise e
+
+    def find_user_by(self, **kwargs) -> User:
+        """Find a user by arbitrary keyword arguments.
+
+        Args:
+            **kwargs: Arbitrary keyword arguments to filter the user.
+
+        Returns:
+            User: The user object found.
+
+        Raises:
+            NoResultFound: If no user is found.
+            InvalidRequestError: If query arguments are invalid.
+        """
+        try:
+            user = self._session.query(User).filter_by(**kwargs).one()
+            return user
+        except NoResultFound:
+            raise NoResultFound("No user found with the given parameters.")
+        except InvalidRequestError:
+            raise InvalidRequestError("Invalid query parameters provided.")
