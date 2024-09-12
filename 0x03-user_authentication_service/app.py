@@ -48,12 +48,20 @@ def login():
 @app.route('/sessions', methods=['DELETE'])
 def logout():
     """Handles user logout by destroying the session."""
-    email_ = request.form.get("email")
-    try:
-        reset = AUTH.get_reset_password_token(email_)
-        return jsonify({"email": email_, "reset_token": reset}), 200
-    except ValueError:
-        abort(403) 
+    session_id = request.cookies.get('session_id')
+
+    if not session_id:
+        abort(403)
+
+    user = AUTH.get_user_from_session_id(session_id)
+
+    if not user:
+        abort(403)
+
+    AUTH.destroy_session(user.id)
+
+    return redirect('/')
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port="5000")
